@@ -1,4 +1,4 @@
-from telegram import Update
+from telegram import Update, InputMediaVideo
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
@@ -28,38 +28,61 @@ loader = instaloader.Instaloader(
 LINK_REGEX = r"(https?://vm\.tiktok\.com/\S+/?|https?://www\.instagram\.com/reel/\S+/?(?:\?[^ \n]*)?)"
 
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Hello! I'm alive.")
-
-
 async def handle_links(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     matches = re.findall(LINK_REGEX, text)
 
+    # Take snapshot of existing files and directories before downloads
+    before_snapshot = set()
+    for root, dirs, files in os.walk("."):
+        for d in dirs:
+            before_snapshot.add(os.path.abspath(os.path.join(root, d)))
+        for f in files:
+            before_snapshot.add(os.path.abspath(os.path.join(root, f)))
+
+    videos_to_send = []
+
     for match in matches:
         start_time = time.time()
+
         if "tiktok.com" in match:
             pyk.save_tiktok(match, save_video=True)
         elif "instagram.com/reel" in match:
-            post = instaloader.Post.from_shortcode(
-                loader.context, shortcode=extract_shortcode(match)
-            )
-            loader.download_post(post, target=extract_shortcode(match))
+            shortcode = extract_shortcode(match)
+            post = instaloader.Post.from_shortcode(loader.context, shortcode)
+            loader.download_post(post, target=shortcode)
 
         time.sleep(1)
 
         video_file = get_newest_file(".mp4", since=start_time)
         if video_file:
-            with open(video_file, "rb") as f:
-                await update.message.reply_video(
-                    f, reply_to_message_id=update.message.message_id
-                )
-            os.remove(video_file)
+            videos_to_send.append(InputMediaVideo(open(video_file, "rb")))
 
-        if "instagram.com/reel" in match:
-            folder_name = extract_shortcode(match)
-            if os.path.isdir(folder_name):
-                shutil.rmtree(folder_name)
+    # Take snapshot after downloads
+    after_snapshot = set()
+    for root, dirs, files in os.walk("."):
+        for d in dirs:
+            after_snapshot.add(os.path.abspath(os.path.join(root, d)))
+        for f in files:
+            after_snapshot.add(os.path.abspath(os.path.join(root, f)))
+
+    # Determine newly created files and directories
+    new_paths = after_snapshot - before_snapshot
+
+    if videos_to_send:
+        await update.message.reply_media_group(
+            media=videos_to_send, reply_to_message_id=update.message.message_id
+        )
+
+    # Delete all new files and directories
+    for path in new_paths:
+        try:
+            if os.path.isfile(path):
+                os.remove(path)
+            elif os.path.isdir(path):
+                shutil.rmtree(path)
+        except Exception as e:
+            print(f"Error deleting {path}: {e}")
 
 
 def get_newest_file(extension=".mp4", since=None):
@@ -91,7 +114,6 @@ def extract_shortcode(url):
 if __name__ == "__main__":
     app = ApplicationBuilder().token(api_key).build()
 
-    app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.ALL, handle_links))
 
     app.run_polling()
