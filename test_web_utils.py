@@ -19,17 +19,6 @@ class TestLinkHandler(unittest.TestCase):
             with self.subTest(url=url):
                 self.assertEqual(self.handler.extract_shortcode(url), expected)
 
-    def test_extract_shortcode_reddit(self):
-        test_cases = [
-            ("https://www.reddit.com/r/aww/comments/12abc34/cute_title/", "12abc34"),
-            ("http://reddit.com/r/python/comments/xyz987/", "xyz987"),
-            ("https://www.reddit.com/r/space/comments/abc123/", "abc123"),
-        ]
-
-        for url, expected in test_cases:
-            with self.subTest(url=url):
-                self.assertEqual(self.handler.extract_shortcode(url), expected)
-
     def test_extract_shortcode_tiktok(self):
         test_cases = [
             ("https://vm.tiktok.com/ZMebxCR7T/", "ZMebxCR7T"),

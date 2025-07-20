@@ -1,4 +1,3 @@
-import instaloader
 import re
 
 
@@ -9,8 +8,6 @@ class LinkHandler:
             https?:\/\/
             (?:www\.)?
             (?:
-                reddit\.com\/r\/[\w]+\/comments\/[\w]+(?:\/[\w_]+)?\/? |
-                redd\.it\/[\w]+ |
                 instagram\.com\/(?:reel|p)\/[\w-]+\/?(?:\?[^\s]*)? |
                 tiktok\.com\/@[\w.-]+\/(?:video|photo)\/\d+ |
                 tiktok\.com\/embed(?:\/v2)?\/\d+ |
@@ -26,7 +23,6 @@ class LinkHandler:
             (?:https?:\/\/(?:www\.)?)
             (?:
                 instagram\.com\/(?:reel|p)\/(?P<instagram_shortcode>[\w-]+) |
-                reddit\.com\/r\/[\w]+\/comments\/(?P<reddit_shortcode>[\w]+) |
                 vm\.tiktok\.com\/(?P<tiktok_shortcode_short>[^\/\?\s]+) |  
                 tiktok\.com\/@[\w.-]+\/video\/(?P<tiktok_shortcode_long>\d+)
             )
@@ -42,13 +38,3 @@ class LinkHandler:
         return next(
             (group for group in match.groupdict().values() if group is not None), None
         )
-
-
-def instaloader_init():
-    return instaloader.Instaloader(
-        download_comments=False,
-        download_geotags=False,
-        download_pictures=False,
-        download_video_thumbnails=False,
-        save_metadata=False,
-    )

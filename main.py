@@ -6,17 +6,16 @@ from telegram.ext import (
     ContextTypes,
 )
 from dotenv import load_dotenv
-from urllib.parse import urlparse
-from web_utils import instaloader_init, LinkHandler
+from web_utils import LinkHandler
+from downloading_utils.instagram_utils import InstagramHandler
 import pyktok as pyk
 import os
-import instaloader
 
 
 # init
 load_dotenv()
 api_key = os.getenv("telegram_token")
-instagram_downloader = instaloader_init()
+instagram_handler = InstagramHandler()
 link_handler = LinkHandler()
 
 
@@ -31,10 +30,7 @@ async def handle_links(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if "tiktok.com" in match:
             pyk.save_tiktok(match, save_video=True)
         elif "instagram.com/reel" in match:
-            post = instaloader.Post.from_shortcode(
-                instagram_downloader.context, shortcode
-            )
-            instagram_downloader.download_post(post, target=shortcode)
+            pass
 
 
 if __name__ == "__main__":
