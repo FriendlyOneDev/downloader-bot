@@ -1,0 +1,130 @@
+import requests
+from parsel import Selector
+
+
+def downloader(file_name, link, response, extension):
+    pass
+
+
+def download_v1(link, file_name, content_type):
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0",
+        "Sec-Fetch-Site": "same-origin",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Origin": "https://musicaldown.com",
+        "Connection": "keep-alive",
+        "Referer": "https://musicaldown.com/en?ref=more",
+    }
+
+    print(f"Downloading {content_type} from {link} using v1 method")
+
+    with requests.Session() as s:
+        try:
+            s.get("https://musicaldown.com/en", headers=headers)
+
+            data = {"verify": "1"}
+            response = s.post(
+                "https://musicaldown.com/download", headers=headers, data=data
+            )
+
+            print(f"Response status: {response.status_code}")
+            print(f"Response headers: {response.headers}")
+            print(f"Response text (first 500 chars): {response.text[:500]}")
+
+            selector = Selector(text=response.text)
+
+            if content_type == "video":
+                download_link = selector.xpath(
+                    "/html/body/div[2]/div/div[2]/div[2]/a[1]/@href"
+                ).get()
+                response = s.get(download_link, stream=True, headers=headers)
+                downloader(file_name, link, response, extension="mp4")
+            else:
+                for index, download_link in enumerate(
+                    selector.xpath('//div[@class="card-image"]/img/@src').getall()
+                ):
+                    response = s.get(download_link, stream=True, headers=headers)
+                    downloader(f"{file_name}_{index}", link, response, extension="jpeg")
+
+        except Exception as e:
+            raise Exception(f"error in v1: {link} - {str(e)}")
+
+
+def download_v2(link, file_name, content_type):
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:131.0) Gecko/20100101 Firefox/131.0",
+        "Accept": "*/*",
+        "Accept-Language": "en-US,en;q=0.5",
+        "HX-Request": "true",
+        "HX-Trigger": "search-btn",
+        "HX-Target": "tiktok-parse-result",
+        "HX-Current-URL": "https://tiktokio.com/",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Origin": "https://tiktokio.com",
+        "Connection": "keep-alive",
+        "Referer": "https://tiktokio.com/",
+    }
+
+    print(f"Downloading {content_type} from {link} using v2 method")
+
+    with requests.Session() as s:
+        try:
+            s.get("https://tiktokio.com/", headers=headers)
+            data = {"vid": link}
+            response = s.post(
+                "https://tiktokio.com/api/v1/tk-htmx", headers=headers, data=data
+            )
+
+            print(f"Response status: {response.status_code}")
+            print(f"Response headers: {response.headers}")
+            print(f"Response text (first 500 chars): {response.text[:500]}")
+
+            selector = Selector(text=response.text)
+
+            if content_type == "video":
+                download_link = selector.css("div.tk-down-link a::attr(href)").get()
+                response = s.get(download_link, stream=True, headers=headers)
+                downloader(file_name, link, response, extension="mp4")
+            else:
+                for index, download_link in enumerate(
+                    selector.xpath('//div[@class="media-box"]/img/@src').getall()
+                ):
+                    response = s.get(download_link, stream=True, headers=headers)
+                    downloader(f"{file_name}_{index}", link, response, extension="jpeg")
+
+        except Exception as e:
+            raise Exception(f"error in v2: {link} - {str(e)}")
+
+
+def download_loop(link, file_name, content_type):
+    for download_function in [download_v1, download_v2]:
+        try:
+            download_function(link, file_name, content_type)
+            break
+        except Exception as e:
+            print(f"Failed with {download_function.__name__}: {str(e)}")
+
+
+if __name__ == "__main__":
+    import sys
+    import os
+
+    current = os.path.dirname(os.path.realpath(__file__))
+    parent = os.path.dirname(current)
+    sys.path.append(parent)
+
+    from web_utils import LinkHandler
+
+    link_handler = LinkHandler()
+
+    link1 = "https://vm.tiktok.com/ZMStKfDmR/"
+    try:
+        download_v1(link1, link_handler.extract_shortcode(link1), "image")
+    except Exception as e:
+        print(f"Failed to download using v1: {str(e)}")
+
+    link2 = "https://vt.tiktok.com/ZSkoSwot9/"
+    try:
+        download_v2(link2, link_handler.extract_shortcode(link2), "video")
+    except Exception as e:
+        print(f"Failed to download using v2: {str(e)}")

@@ -6,10 +6,10 @@ class InstagramHandler:
         self.instaloader = instaloader.Instaloader(
             download_comments=False,
             download_geotags=False,
-            download_pictures=False,
             download_video_thumbnails=False,
             save_metadata=False,
             post_metadata_txt_pattern="",
+            dirname_pattern=".",
         )
 
     def download_post(self, shortcode):
@@ -21,5 +21,7 @@ class InstagramHandler:
 if __name__ == "__main__":
     handler = InstagramHandler()
     # Example usage
-    shortcode = "DG_OqyBsqSC"
+    # shortcode = "DG_OqyBsqSC"
+    # handler.download_post(shortcode)
+    shortcode = "Br-7zlEBjPc"
     handler.download_post(shortcode)

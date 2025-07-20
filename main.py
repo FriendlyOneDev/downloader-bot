@@ -30,7 +30,7 @@ async def handle_links(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if "tiktok.com" in match:
             pyk.save_tiktok(match, save_video=True)
         elif "instagram.com/reel" in match:
-            pass
+            instagram_handler.download_post(shortcode)
 
 
 if __name__ == "__main__":
