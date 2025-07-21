@@ -1,4 +1,5 @@
 import re
+import requests
 
 
 class LinkHandler:
@@ -29,6 +30,7 @@ class LinkHandler:
             """,
             re.VERBOSE,
         )
+        self.tiktok_type_pattern = re.compile(r"tiktok\.com/@[\w.-]+/(video|photo)/\d+")
 
     def extract_shortcode(self, url):
         match = self.shortcode_pattern.search(url)
@@ -38,3 +40,17 @@ class LinkHandler:
         return next(
             (group for group in match.groupdict().values() if group is not None), None
         )
+
+    def _resolve_tiktok_link(self, url):
+        try:
+            response = requests.get(url, allow_redirects=True, timeout=5)
+            return response.url
+        except Exception as e:
+            raise ValueError(f"Failed to resolve TikTok link: {e}")
+
+    def extract_tiktok_type(self, url):
+        resolved = self._resolve_tiktok_link(url)
+        match = self.tiktok_type_pattern.search(resolved)
+        if match:
+            return match.group(1)
+        raise ValueError("Type not found in resolved TikTok URL")

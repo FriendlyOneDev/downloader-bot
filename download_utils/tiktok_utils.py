@@ -1,15 +1,10 @@
 import requests
 from parsel import Selector
 import os
-from tqdm import tqdm
 
 
-def downloader(file_name, link, response, extension):
-    file_size = int(response.headers.get("content-length", 0))
-    # username, _, content_type = extract_video_id(link)
-
+def downloader(file_name, response, extension):
     file_name = f"{file_name}"
-
     file_path = os.path.join(".", f"{file_name}.{extension}")
 
     with open(file_path, "wb") as file:
@@ -49,13 +44,13 @@ def download_v1(link, file_name, content_type):
 
                 response = s.get(download_link, stream=True, headers=headers)
 
-                downloader(file_name, link, response, extension="mp4")
+                downloader(file_name, response, extension="mp4")
             else:
                 download_links = selector.css(".card-img-top::attr(src)").getall()
                 for index, download_link in enumerate(download_links):
                     response = s.get(download_link, stream=True, headers=headers)
 
-                    downloader(f"{file_name}_{index}", link, response, extension="jpeg")
+                    downloader(f"{file_name}_{index}", response, extension="jpeg")
 
         except Exception as e:
             print(f"\033[91merror\033[0m: {link} - {str(e)}")
@@ -108,7 +103,7 @@ def download_v2(link, file_name, content_type):
 
                 response = s.get(download_link, stream=True, headers=headers)
 
-                downloader(file_name, link, response, extension="mp4")
+                downloader(file_name, response, extension="mp4")
             else:
                 download_links = selector.xpath(
                     '//div[@class="card-image"]/img/@src'
@@ -116,7 +111,7 @@ def download_v2(link, file_name, content_type):
 
                 for index, download_link in enumerate(download_links):
                     response = s.get(download_link, stream=True, headers=headers)
-                    downloader(f"{file_name}_{index}", link, response, extension="jpeg")
+                    downloader(f"{file_name}_{index}", response, extension="jpeg")
 
         except Exception as e:
             print(f"\033[91merror\033[0m: {link} - {str(e)}")
@@ -166,7 +161,7 @@ def download_v3(link, file_name, content_type):
 
                 response = s.get(download_link, stream=True, headers=headers)
 
-                downloader(file_name, link, response, extension="mp4")
+                downloader(file_name, response, extension="mp4")
             else:
                 download_links = selector.xpath(
                     '//div[@class="media-box"]/img/@src'
@@ -174,12 +169,21 @@ def download_v3(link, file_name, content_type):
 
                 for index, download_link in enumerate(download_links):
                     response = s.get(download_link, stream=True, headers=headers)
-                    downloader(f"{file_name}_{index}", link, response, extension="jpeg")
+                    downloader(f"{file_name}_{index}", response, extension="jpeg")
 
         except Exception as e:
             print(f"\033[91merror\033[0m: {link} - {str(e)}")
             with open("errors.txt", "a") as error_file:
                 error_file.write(link + "\n")
+
+
+def fallback_download(link, file_name, content_type):
+    for func in [download_v1, download_v2, download_v3]:
+        try:
+            func(link, file_name, content_type)
+            return
+        except Exception as e:
+            print(f"Failed with {func.__name__}: {str(e)}")
 
 
 if __name__ == "__main__":

@@ -7,14 +7,16 @@ from telegram.ext import (
 )
 from dotenv import load_dotenv
 from web_utils import LinkHandler
-from downloading_utils.instagram_utils import InstagramHandler
-import pyktok as pyk
+from download_utils.instagram_utils import InstagramHandler
+from download_utils.tiktok_utils import fallback_download
 import os
 
 
 # init
 load_dotenv()
 api_key = os.getenv("telegram_token")
+admin_id = int(os.getenv("admin_id"))
+
 instagram_handler = InstagramHandler()
 link_handler = LinkHandler()
 
@@ -28,9 +30,14 @@ async def handle_links(update: Update, context: ContextTypes.DEFAULT_TYPE):
         shortcode = link_handler.extract_shortcode(match)
         print(f"Shortcode: {shortcode}")
         if "tiktok.com" in match:
-            pyk.save_tiktok(match, save_video=True)
-        elif "instagram.com/reel" in match:
+            fallback_download(match, shortcode, link_handler.extract_tiktok_type(match))
+        elif "instagram.com" in match:
             instagram_handler.download_post(shortcode)
+
+
+async def send_error_message(context: ContextTypes.DEFAULT_TYPE, matches):
+    error_message = "The following links could not be processed:\n" + "\n".join(matches)
+    await context.bot.send_message(chat_id=admin_id, text=error_message)
 
 
 if __name__ == "__main__":
