@@ -2,6 +2,8 @@ import requests
 from parsel import Selector
 import os
 
+# Huge thanks to the  financiallyruined/TikTok-Multi-Downloader
+
 
 def downloader(file_name, response, extension):
     file_name = f"{file_name}"

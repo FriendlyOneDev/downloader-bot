@@ -1,0 +1,5 @@
+instaloader
+requests
+parsel
+python-telegram-bot
+python-dotenv
