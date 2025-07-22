@@ -13,19 +13,11 @@ A Telegram bot that detects Instagram and TikTok links in messages, downloads th
 ---
 
 ## Setup
-
-### Prerequisites
-
-- Python 3.9+
-- Telegram Bot Token (create a bot with [@BotFather](https://t.me/BotFather))
-- [python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot) library
-- Other dependencies (listed in `requirements.txt`)
-
 ### Installation
 
 1. Clone the repository:
 ```
-git clone https://github.com/yourusername/telegram-media-downloader-bot.git
+git clone https://github.com/FriendlyOneDev/downloader-bot
 cd telegram-media-downloader-bot
 ```
 
