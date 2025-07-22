@@ -29,6 +29,18 @@ class FileHandler:
 
         return media_files
 
+    def delete_files(self, file_name):
+        file_paths = self._get_file_paths(file_name)
+        for path in file_paths:
+            try:
+                if os.path.exists(path):
+                    os.remove(path)
+                    print(f"Deleted file: {path}")
+                else:
+                    print(f"File not found (skipped): {path}")
+            except Exception as e:
+                print(f"Error deleting file {path}: {e}")
+
 
 if __name__ == "__main__":
     file_handler = FileHandler()
