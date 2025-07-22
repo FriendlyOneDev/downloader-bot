@@ -2,7 +2,8 @@ import requests
 from parsel import Selector
 import os
 
-# Huge thanks to the  financiallyruined/TikTok-Multi-Downloader
+# Huge thanks to the financiallyruined for his TikTok-Multi-Downloader project
+# Majority of this code is from there
 
 
 def downloader(file_name, response, extension):
@@ -189,9 +190,9 @@ def fallback_download(link, file_name, content_type):
 
 
 if __name__ == "__main__":
-    img_link1 = "https://vm.tiktok.com/ZMSnxAPfy/"
-    img_link2 = "https://vm.tiktok.com/ZMSnxMjKX/"
-    img_link3 = "https://vm.tiktok.com/ZMSnx23us/"
+    img_link1 = "https://vm.tiktok.com/ZMSWakLUd/"
+    img_link2 = "https://vm.tiktok.com/ZMSWabGYL/"
+    img_link3 = "https://vm.tiktok.com/ZMSWashGU/"
 
     vid_link1 = "https://vm.tiktok.com/ZMSnxPae1/"
     vid_link2 = "https://vm.tiktok.com/ZMSnxfmEC/"
