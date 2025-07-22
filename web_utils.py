@@ -12,7 +12,8 @@ class LinkHandler:
                 instagram\.com\/(?:reel|p)\/[\w-]+\/?(?:\?[^\s]*)? |
                 tiktok\.com\/@[\w.-]+\/(?:video|photo)\/\d+ |
                 tiktok\.com\/embed(?:\/v2)?\/\d+ |
-                vm\.tiktok\.com\/[\w\/]+
+                vm\.tiktok\.com\/[\w\/]+ |
+                vt\.tiktok\.com\/[\w\/]+
             )
             \/?
             (?:\?[^\s]*)?
