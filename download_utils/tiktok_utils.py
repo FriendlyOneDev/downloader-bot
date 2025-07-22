@@ -4,6 +4,7 @@ import os
 
 # Huge thanks to the financiallyruined for his TikTok-Multi-Downloader project
 # Majority of this code is from there
+# https://github.com/financiallyruined/TikTok-Multi-Downloader
 
 
 def downloader(file_name, response, extension):
