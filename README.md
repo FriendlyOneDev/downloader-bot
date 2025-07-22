@@ -7,9 +7,7 @@ A Telegram bot that detects Instagram and TikTok links in messages, downloads th
 ## Features
 
 - Supports downloading posts from Instagram and TikTok links.
-- Automatically detects media files (images/videos) associated with a link.
-- Sends media as Telegram media groups.
-- Error handling with user notifications and admin alerts.
+- Sends downloaded media as Telegram media groups.
 - Automatic cleanup of downloaded media files after sending.
 
 ---
@@ -44,7 +42,7 @@ pip install -r requirements.txt
 4. Create a .env file with your credentials:
 ```
 telegram_token=YOUR_TELEGRAM_BOT_TOKEN
-admin_id=YOUR_TELEGRAM_USER_ID
+admin_id=YOUR_TELEGRAM_USER_ID #Bot needs it to send error messages directly to you. You can tweak the code to not require this
 ```
 5. Run the bot
 
