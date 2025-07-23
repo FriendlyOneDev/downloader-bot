@@ -18,7 +18,7 @@ A Telegram bot that detects Instagram and TikTok links in messages, downloads th
 1. Clone the repository:
 ```
 git clone https://github.com/FriendlyOneDev/downloader-bot
-cd telegram-media-downloader-bot
+cd downloader-bot
 ```
 
 2. Create and activate a virtual environment:
@@ -38,6 +38,22 @@ admin_id=YOUR_TELEGRAM_USER_ID #Bot needs it to send error messages directly to 
 ```
 5. Run the bot
 
+## Structure
 
+```
+.
+├── bot_stats.json
+├──<span style="color:dark green"> download_utils</span>  
+│   ├──<span style="color:green"> instagram_utils.py</span>  
+│   └──<span style="color:green"> tiktok_utils.py</span>  
+├──<span style="color:green"> file_utils.py</span>  
+├──<span style="color:orange"> main.py</span>  
+├── README.md
+├── requirements.txt
+├──<span style="color:green"> stats_utils.py</span>  
+├── test.sh
+├── test_web_utils.py
+└──<span style="color:green"> web_utils.py</span>  
+```
 
 
