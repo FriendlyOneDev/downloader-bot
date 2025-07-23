@@ -11,10 +11,12 @@ from web_utils import LinkHandler
 from file_utils import FileHandler
 from download_utils.instagram_utils import InstagramHandler
 from download_utils.tiktok_utils import fallback_download
+from stats_utils import load_stats, save_stats, hash_id
 import os
 
 
 # Load environment variables
+stats = load_stats()  # Just to show off bot's usage B)
 load_dotenv()
 api_key = os.getenv("telegram_token")
 admin_id = int(os.getenv("admin_id"))
@@ -27,6 +29,8 @@ file_handler = FileHandler()
 
 # Main function to handle incoming messages, extracting links, and processing them
 async def handle_links(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message or not update.message.text:
+        return
     text = update.message.text
     print(f"Received message: {text}")
     matches = link_handler.link_pattern.findall(text)
@@ -34,6 +38,19 @@ async def handle_links(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Process each matched link
     for match in matches:
+        # Add new unique user and chat to stats(without saving to file)
+        user_id = update.message.from_user.id
+        chat_id = update.message.chat_id
+
+        # Hash user and chat IDs for privacy
+        user_hash = hash_id(user_id)
+        chat_hash = hash_id(chat_id)
+
+        if user_id not in stats["unique_users"]:
+            stats["unique_users"].add(user_hash)
+        if chat_id not in stats["unique_chats"]:
+            stats["unique_chats"].add(chat_hash)
+
         try:
             shortcode = link_handler.extract_shortcode(match)
             print(f"Shortcode: {shortcode}")
@@ -64,6 +81,10 @@ async def handle_links(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 user_msg = "Something went wrong while retrieving media for this link."
                 await update.message.reply_text(user_msg)
                 await send_error_message(context, [match], "No media files found.")
+
+            # Saving stats
+            stats["total_links"] += 1
+            save_stats(stats)
         except Exception as e:
             # Exception caught, notify user and admin
             print(f"Error processing {match}: {e}")
