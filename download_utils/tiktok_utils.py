@@ -65,6 +65,7 @@ def download_v1(link, file_name, content_type):
                     break
                 else:
                     print("❌ No valid video links found.")
+		    raise Exception('No valid video links found')
             else:
                 download_links = selector.css(".card-img-top::attr(src)").getall()
                 for index, download_link in enumerate(download_links):
