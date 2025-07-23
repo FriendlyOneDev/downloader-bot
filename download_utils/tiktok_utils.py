@@ -41,14 +41,30 @@ def download_v1(link, file_name, content_type):
             selector = Selector(text=response)
 
             if content_type == "video":
-                download_link_index = 2
-                download_link = selector.css(
+                download_links = selector.css(
                     ".downtmate-right.is-desktop-only.right a::attr(href)"
-                ).getall()[download_link_index]
+                ).getall()
 
-                response = s.get(download_link, stream=True, headers=headers)
+                print(f"Found {len(download_links)} download link(s):")
+                for i, link in enumerate(download_links):
+                    print(f"[{i}] {link}")
 
-                downloader(file_name, response, extension="mp4")
+                for link in download_links:
+                    print(f"Trying download link: {link}")
+                    response = s.get(link, stream=True, headers=headers)
+
+                    # Skip if it's not a real video
+                    content_type = response.headers.get("Content-Type", "")
+                    if "text/html" in content_type:
+                        print("⚠️ Skipping link: got HTML instead of video.")
+                        continue
+
+                    # Valid video file, proceed to save
+                    downloader(file_name, response, extension="mp4")
+                    print("✅ Successfully downloaded video.")
+                    break
+                else:
+                    print("❌ No valid video links found.")
             else:
                 download_links = selector.css(".card-img-top::attr(src)").getall()
                 for index, download_link in enumerate(download_links):
