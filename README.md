@@ -43,17 +43,17 @@ admin_id=YOUR_TELEGRAM_USER_ID #Bot needs it to send error messages directly to 
 ```
 .
 ├── bot_stats.json
-├──<span style="color:dark green"> download_utils</span>  
-│   ├──<span style="color:green"> instagram_utils.py</span>  
-│   └──<span style="color:green"> tiktok_utils.py</span>  
-├──<span style="color:green"> file_utils.py</span>  
-├──<span style="color:orange"> main.py</span>  
+├── download_utils
+│   ├── instagram_utils.py
+│   └── tiktok_utils.py
+├── file_utils.py
+├── main.py
 ├── README.md
 ├── requirements.txt
-├──<span style="color:green"> stats_utils.py</span>  
+├── stats_utils.py 
 ├── test.sh
 ├── test_web_utils.py
-└──<span style="color:green"> web_utils.py</span>  
+└── web_utils.py
 ```
 
 
