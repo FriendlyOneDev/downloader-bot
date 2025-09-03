@@ -65,7 +65,7 @@ def download_v1(link, file_name, content_type):
                     break
                 else:
                     print("❌ No valid video links found.")
-		    raise Exception('No valid video links found')
+                    raise Exception("No valid video links found")
             else:
                 download_links = selector.css(".card-img-top::attr(src)").getall()
                 for index, download_link in enumerate(download_links):
@@ -91,10 +91,14 @@ def download_v2(link, file_name, content_type):
 
     with requests.Session() as s:
         try:
+            # Get initial page
             r = s.get("https://musicaldown.com/en", headers=headers)
+            if r.status_code != 200:
+                raise Exception(f"Failed to load page, status code: {r.status_code}")
 
             selector = Selector(text=r.text)
 
+            # Extract tokens with better error handling
             token_a = selector.xpath('//*[@id="link_url"]/@name').get()
             token_b = selector.xpath(
                 '//*[@id="submit-form"]/div/div[1]/input[2]/@name'
@@ -103,41 +107,110 @@ def download_v2(link, file_name, content_type):
                 '//*[@id="submit-form"]/div/div[1]/input[2]/@value'
             ).get()
 
+            # Check if required tokens were found
+            if not token_a:
+                raise Exception("Could not find token_a (link_url name attribute)")
+            if not token_b:
+                raise Exception("Could not find token_b (second input name attribute)")
+            if not token_b_value:
+                raise Exception(
+                    "Could not find token_b_value (second input value attribute)"
+                )
+
+            print(f"Found tokens - token_a: {token_a}, token_b: {token_b}")
+
+            # Prepare data
             data = {
                 token_a: link,
                 token_b: token_b_value,
                 "verify": "1",
             }
 
+            # Submit form
             response = s.post(
                 "https://musicaldown.com/download", headers=headers, data=data
             )
+            if response.status_code != 200:
+                raise Exception(
+                    f"Failed to submit form, status code: {response.status_code}"
+                )
 
             selector = Selector(text=response.text)
 
             if content_type == "video":
-                watermark = selector.xpath(
-                    "/html/body/div[2]/div/div[2]/div[2]/a[3]/@href"
-                ).get()
+                # Try multiple possible selectors for video download
+                video_selectors = [
+                    "/html/body/div[2]/div/div[2]/div[2]/a[3]/@href",
+                    "//a[contains(@class, 'download') and contains(text(), 'Download')]/@href",
+                    "//a[contains(@href, '.mp4')]/@href",
+                    "//div[contains(@class, 'download')]//a/@href",
+                ]
 
-                download_link = watermark
+                download_link = None
+                for xpath in video_selectors:
+                    download_link = selector.xpath(xpath).get()
+                    if download_link:
+                        print(f"Found video download link using selector: {xpath}")
+                        break
 
+                if not download_link:
+                    raise Exception("Could not find video download link")
+
+                # Download video
                 response = s.get(download_link, stream=True, headers=headers)
+                if response.status_code != 200:
+                    raise Exception(
+                        f"Failed to download video, status code: {response.status_code}"
+                    )
 
                 downloader(file_name, response, extension="mp4")
-            else:
-                download_links = selector.xpath(
-                    '//div[@class="card-image"]/img/@src'
-                ).getall()
 
+            else:  # Images
+                # Try multiple selectors for images
+                image_selectors = [
+                    '//div[@class="card-image"]/img/@src',
+                    '//img[contains(@src, "http")]/@src',
+                    '//div[contains(@class, "image")]//img/@src',
+                ]
+
+                download_links = []
+                for xpath in image_selectors:
+                    download_links = selector.xpath(xpath).getall()
+                    if download_links:
+                        print(
+                            f"Found {len(download_links)} image links using selector: {xpath}"
+                        )
+                        break
+
+                if not download_links:
+                    raise Exception("Could not find image download links")
+
+                # Download images
                 for index, download_link in enumerate(download_links):
-                    response = s.get(download_link, stream=True, headers=headers)
-                    downloader(f"{file_name}_{index}", response, extension="jpeg")
+                    try:
+                        # Convert relative URL to absolute URL
+                        if download_link.startswith("/"):
+                            download_link = "https://musicaldown.com" + download_link
+                        elif not download_link.startswith("http"):
+                            download_link = "https://musicaldown.com/" + download_link
+
+                        response = s.get(download_link, stream=True, headers=headers)
+                        if response.status_code == 200:
+                            downloader(
+                                f"{file_name}_{index}", response, extension="jpeg"
+                            )
+                        else:
+                            print(
+                                f"Failed to download image {index}, status code: {response.status_code}"
+                            )
+                    except Exception as img_error:
+                        print(f"Error downloading image {index}: {img_error}")
 
         except Exception as e:
             print(f"\033[91merror\033[0m: {link} - {str(e)}")
             with open("errors.txt", "a") as error_file:
-                error_file.write(link + "\n")
+                error_file.write(f"{link} - {str(e)}\n")
+            raise Exception
 
 
 def download_v3(link, file_name, content_type):
@@ -196,6 +269,8 @@ def download_v3(link, file_name, content_type):
             print(f"\033[91merror\033[0m: {link} - {str(e)}")
             with open("errors.txt", "a") as error_file:
                 error_file.write(link + "\n")
+
+            raise Exception
 
 
 def fallback_download(link, file_name, content_type):
