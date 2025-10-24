@@ -2,3 +2,6 @@ __pycache__/
 .env
 venv/
 test/
+.venv/
+bot_stats.json
+errors.txt

@@ -32,9 +32,7 @@ async def handle_links(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
         return
     text = update.message.text
-    print(f"Received message: {text}")
     matches = link_handler.link_pattern.findall(text)
-    print(f"Found matches: {matches}")
 
     # Process each matched link
     for match in matches:
