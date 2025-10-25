@@ -13,6 +13,7 @@ from file_utils import FileHandler
 from download_utils.instagram_utils import InstagramHandler
 from download_utils.tiktok_utils import fallback_download
 from stats_utils import load_stats, save_stats, hash_id
+from datetime import datetime
 import os
 
 
@@ -106,6 +107,13 @@ async def send_error_message(context: ContextTypes.DEFAULT_TYPE, matches, error_
 async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Pong!")
 
+async def on_startup(app):
+    start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    await app.bot.send_message(
+        chat_id=admin_id,
+        text=f"Bot started successfully at {start_time}"
+    )
+
 if __name__ == "__main__":
     # Bot setup and start polling
     request = HTTPXRequest(
@@ -116,7 +124,11 @@ if __name__ == "__main__":
         media_write_timeout=60.0,
     )
 
-    app = ApplicationBuilder().token(api_key).request(request).build()
+    app = (ApplicationBuilder()
+           .token(api_key)
+           .request(request)
+           .post_init(on_startup)
+           .build())
 
     app.add_handler(CommandHandler("ping", ping))
     app.add_handler(MessageHandler(filters.ALL, handle_links))
