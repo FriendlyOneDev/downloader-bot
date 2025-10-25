@@ -4,6 +4,7 @@ from telegram.ext import (
     MessageHandler,
     filters,
     ContextTypes,
+    CommandHandler
 )
 from telegram.request import HTTPXRequest
 from dotenv import load_dotenv
@@ -102,6 +103,8 @@ async def send_error_message(context: ContextTypes.DEFAULT_TYPE, matches, error_
     )
     await context.bot.send_message(chat_id=admin_id, text=error_message)
 
+async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Pong!")
 
 if __name__ == "__main__":
     # Bot setup and start polling
@@ -115,6 +118,7 @@ if __name__ == "__main__":
 
     app = ApplicationBuilder().token(api_key).request(request).build()
 
+    app.add_handler(CommandHandler("ping", ping))
     app.add_handler(MessageHandler(filters.ALL, handle_links))
 
     app.run_polling()
