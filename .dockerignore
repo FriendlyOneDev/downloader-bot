@@ -1,0 +1,20 @@
+# Python virtual environments
+venv
+.venv
+
+# Bytecode
+__pycache__
+*.pyc
+
+# Git
+.git
+
+# Logs / temp files
+*.log
+
+# Secrets
+.env
+errors.txt
+bot_stats.json
+
+test
