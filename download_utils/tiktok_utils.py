@@ -7,13 +7,34 @@ import os
 # https://github.com/financiallyruined/TikTok-Multi-Downloader
 
 
-def downloader(file_name, response, extension):
+def validate_response(response):
+    """Validate that response contains actual media, not an error message."""
+    content_type = response.headers.get("Content-Type", "")
+    content_length = response.headers.get("Content-Length", "0")
+
+    if "text/" in content_type or "application/json" in content_type:
+        raise ValueError(f"Invalid response: got {content_type} instead of media")
+
+    if int(content_length) < 1000 and int(content_length) > 0:
+        raise ValueError(f"Response too small ({content_length} bytes), likely an error")
+
+    return True
+
+
+def downloader(file_name, response, extension, validate=True):
     file_name = f"{file_name}"
     file_path = os.path.join(".", f"{file_name}.{extension}")
+
+    if validate:
+        validate_response(response)
 
     with open(file_path, "wb") as file:
         for chunk in response.iter_content(chunk_size=1024):
             file.write(chunk)
+
+    if validate and os.path.getsize(file_path) < 1000:
+        os.remove(file_path)
+        raise ValueError(f"Downloaded file too small, likely an error response")
 
 
 def download_v1(link, file_name, content_type):
@@ -272,13 +293,21 @@ def download_v3(link, file_name, content_type):
             raise Exception
 
 
-def fallback_download(link, file_name, content_type):
-    for func in [download_v1, download_v2, download_v3]:
-        try:
-            func(link, file_name, content_type)
-            return
-        except Exception as e:
-            print(f"Failed with {func.__name__}: {str(e)}")
+def fallback_download(link, file_name, content_type, max_retries=2):
+    methods = [download_v1, download_v2, download_v3]
+
+    for attempt in range(max_retries):
+        if attempt > 0:
+            print(f"Retry attempt {attempt}/{max_retries - 1}...")
+
+        for func in methods:
+            try:
+                func(link, file_name, content_type)
+                return
+            except Exception as e:
+                print(f"Failed with {func.__name__}: {str(e)}")
+
+    raise Exception(f"All download methods failed after {max_retries} attempts")
 
 
 if __name__ == "__main__":
@@ -286,7 +315,7 @@ if __name__ == "__main__":
     img_link2 = "https://vm.tiktok.com/ZMSWabGYL/"
     img_link3 = "https://vm.tiktok.com/ZMSWashGU/"
 
-    vid_link1 = "https://vm.tiktok.com/ZMSnxPae1/"
+    vid_link1 = "https://vm.tiktok.com/ZMDks2TWD/"
     vid_link2 = "https://vm.tiktok.com/ZMSnxfmEC/"
     vid_link3 = "https://vm.tiktok.com/ZMSnx9kG1/"
 
