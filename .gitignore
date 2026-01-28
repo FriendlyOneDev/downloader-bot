@@ -3,6 +3,9 @@ __pycache__/
 .venv/
 venv/
 test/
-.venv/
 bot_stats.json
 errors.txt
+*.mp4
+*.jpg
+*.jpeg
+instagrapi_session.json

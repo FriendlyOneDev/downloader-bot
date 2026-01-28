@@ -16,5 +16,11 @@ __pycache__
 .env
 errors.txt
 bot_stats.json
+instagrapi_session.json
+
+# Media files
+*.mp4
+*.jpg
+*.jpeg
 
 test

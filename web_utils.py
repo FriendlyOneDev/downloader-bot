@@ -31,7 +31,7 @@ class LinkHandler:
             """,
             re.VERBOSE,
         )
-        self.tiktok_type_pattern = re.compile(r"tiktok\.com/@[\w.-]+/(video|photo)/\d+")
+        self.tiktok_type_pattern = re.compile(r"tiktok\.com/@[\w.-]*/(video|photo)/\d+")
 
     def extract_shortcode(self, url):
         match = self.shortcode_pattern.search(url)
