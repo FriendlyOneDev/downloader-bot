@@ -9,6 +9,7 @@ load_dotenv()
 class InstagramHandler:
     def __init__(self):
         self.client = Client()
+        self._configure_client()
 
         username = os.getenv("INSTAGRAM_USERNAME")
         password = os.getenv("INSTAGRAM_PASSWORD")
@@ -18,6 +19,7 @@ class InstagramHandler:
         # Try to load existing session
         try:
             self.client.load_settings(session_file)
+            self._configure_client()  # Re-apply settings after loading
         except:
             pass
 
@@ -28,6 +30,18 @@ class InstagramHandler:
                 self.client.dump_settings(session_file)
             except Exception as e:
                 print(f"Instagram login failed: {e}")
+
+    def _configure_client(self):
+        """Configure client with updated Instagram app version to avoid checkpoint."""
+        self.client.set_settings({
+            "app_version": "410.0.0.30.115",
+            "android_version": 34,
+            "android_release": "14.0.0",
+            "version_code": "640000000"
+        })
+        self.client.set_user_agent(
+            "Instagram 410.0.0.30.115 Android (34/14.0.0; 640dpi; 1440x3040; samsung; SM-G998B; p3s; exynos2100; en_US; 640000000)"
+        )
 
     def download_post(self, shortcode):
         media_pk = self.client.media_pk_from_code(shortcode)
