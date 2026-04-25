@@ -1,0 +1,10 @@
+services:
+  bot:
+    image: friendlyone/downloader-bot:latest
+    container_name: downloader-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./bot_stats.json:/app/bot_stats.json
+      - ./instagrapi_session.json:/app/instagrapi_session.json
