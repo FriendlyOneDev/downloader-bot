@@ -1,4 +1,5 @@
 from instagrapi import Client
+import instaloader
 import os
 import requests
 from dotenv import load_dotenv
@@ -12,29 +13,48 @@ class InstagramHandler:
     def __init__(self):
         self.client = Client()
         self.logged_in = False
+        self.login_error = None
         self._configure_client()
+        self._try_login()
+
+        # Instaloader fallback (no login, works for public posts)
+        self.loader = instaloader.Instaloader(
+            download_comments=False,
+            download_geotags=False,
+            download_video_thumbnails=False,
+            save_metadata=False,
+            post_metadata_txt_pattern="",
+            dirname_pattern=".",
+        )
+
+    def _try_login(self):
+        """Attempt to log in, reusing session if available."""
+        self.logged_in = False
+        self.login_error = None
 
         username = os.getenv("INSTAGRAM_USERNAME")
         password = os.getenv("INSTAGRAM_PASSWORD")
 
-        # Try to reuse existing session without calling login()
-        if os.path.exists(self.SESSION_FILE):
+        # Try to reuse existing session
+        if os.path.isfile(self.SESSION_FILE) and os.path.getsize(self.SESSION_FILE) > 0:
             try:
                 self.client.load_settings(self.SESSION_FILE)
                 self._configure_client()
                 self.client.login(username, password)
-                # Test the session with a lightweight request
                 self.client.user_info_by_username(username)
                 self.logged_in = True
+                self.client.dump_settings(self.SESSION_FILE)
                 print("Instagram: session is valid")
                 return
             except Exception as e:
-                print(f"Instagram: session invalid ({e}), trying fresh login")
-                # Reset client for a clean login attempt
-                self.client = Client()
-                self._configure_client()
+                print(f"Instagram: session reuse failed ({e})")
+                self.login_error = str(e)
+                # Don't attempt fresh login automatically -
+                # it triggers a new challenge creating an infinite loop.
+                # Use the 'login' command after approving on Instagram.
+                return
 
-        # Fresh login only if session didn't work
+        # Fresh login only if no session file exists
         if username and password:
             try:
                 self.client.login(username, password)
@@ -42,6 +62,7 @@ class InstagramHandler:
                 self.logged_in = True
                 print("Instagram: fresh login successful")
             except Exception as e:
+                self.login_error = str(e)
                 print(f"Instagram login failed: {e}")
 
     def _configure_client(self):
@@ -57,6 +78,17 @@ class InstagramHandler:
         )
 
     def download_post(self, shortcode):
+        """Download post using instagrapi, falling back to instaloader."""
+        if self.logged_in:
+            try:
+                self._download_instagrapi(shortcode)
+                return
+            except Exception as e:
+                print(f"instagrapi download failed ({e}), trying instaloader fallback")
+
+        self._download_instaloader(shortcode)
+
+    def _download_instagrapi(self, shortcode):
         media_pk = self.client.media_pk_from_code(shortcode)
         result = self.client.private_request(f"media/{media_pk}/info/")
 
@@ -84,6 +116,11 @@ class InstagramHandler:
                     elif "image_versions2" in media:
                         url = media["image_versions2"]["candidates"][0]["url"]
                         self._download_file(url, f"{shortcode}_{idx + 1}.jpg")
+
+    def _download_instaloader(self, shortcode):
+        self.loader.filename_pattern = "{shortcode}"
+        post = instaloader.Post.from_shortcode(self.loader.context, shortcode)
+        self.loader.download_post(post, target=shortcode)
 
     def _download_file(self, url, filename):
         response = requests.get(url)
