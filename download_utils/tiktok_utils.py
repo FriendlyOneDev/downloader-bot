@@ -97,6 +97,7 @@ def download_v1(link, file_name, content_type):
             print(f"\033[91merror\033[0m: {link} - {str(e)}")
             with open("errors.txt", "a") as error_file:
                 error_file.write(link + "\n")
+            raise
 
 
 def download_v2(link, file_name, content_type):

@@ -148,6 +148,7 @@ async def handle_links(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     await send_error_message(context, [match], f"Cleanup failed: {e}")
             else:
                 # No media files found, notify user and admin
+                print(f"No media on disk for shortcode {shortcode} ({match})")
                 user_msg = "Something went wrong while retrieving media for this link."
                 await update.message.reply_text(user_msg)
                 await send_error_message(context, [match], "No media files found.")
