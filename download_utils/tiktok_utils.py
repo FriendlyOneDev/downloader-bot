@@ -1,6 +1,7 @@
 import requests
 from parsel import Selector
 import os
+import yt_dlp
 
 # Huge thanks to the financiallyruined for his TikTok-Multi-Downloader project
 # Majority of this code is from there
@@ -294,8 +295,32 @@ def download_v3(link, file_name, content_type):
             raise Exception
 
 
+def download_ytdlp(link, file_name, content_type):
+    if content_type == "video":
+        outtmpl = f"{file_name}.%(ext)s"
+    else:
+        outtmpl = f"{file_name}_%(playlist_index)s.%(ext)s"
+
+    ydl_opts = {
+        "outtmpl": outtmpl,
+        "quiet": True,
+        "no_warnings": True,
+        "noprogress": True,
+        "noplaylist": False,
+    }
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([link])
+    except Exception as e:
+        print(f"\033[91merror\033[0m: {link} - {str(e)}")
+        with open("errors.txt", "a") as error_file:
+            error_file.write(f"{link} - {str(e)}\n")
+        raise
+
+
 def fallback_download(link, file_name, content_type, max_retries=2):
-    methods = [download_v1, download_v2, download_v3]
+    methods = [download_v1, download_ytdlp, download_v2, download_v3]
 
     for attempt in range(max_retries):
         if attempt > 0:
