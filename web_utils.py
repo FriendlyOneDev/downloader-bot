@@ -1,4 +1,5 @@
 import re
+import time
 import requests
 
 
@@ -42,12 +43,19 @@ class LinkHandler:
             (group for group in match.groupdict().values() if group is not None), None
         )
 
-    def _resolve_tiktok_link(self, url):
-        try:
-            response = requests.get(url, allow_redirects=True, timeout=5)
-            return response.url
-        except Exception as e:
-            raise ValueError(f"Failed to resolve TikTok link: {e}")
+    def _resolve_tiktok_link(self, url, max_retries=3):
+        last_exc = None
+        for attempt in range(max_retries):
+            try:
+                response = requests.get(url, allow_redirects=True, timeout=5)
+                return response.url
+            except Exception as e:
+                last_exc = e
+                if attempt + 1 < max_retries:
+                    time.sleep(0.5 * (attempt + 1))
+        raise ValueError(
+            f"Failed to resolve TikTok link after {max_retries} attempts: {last_exc}"
+        )
 
     def extract_tiktok_type(self, url):
         resolved = self._resolve_tiktok_link(url)
