@@ -5,6 +5,8 @@ import requests
 import yt_dlp
 from dotenv import load_dotenv
 
+from download_utils import snapsave_utils
+
 load_dotenv()
 
 
@@ -114,7 +116,13 @@ class InstagramHandler:
                 errors.append(f"instagrapi: {e}")
                 print(f"instagrapi download failed ({e}), trying next method")
 
-        for method in (self._download_ytdlp, self._download_instaloader):
+        # snapsave last: it reaches restricted posts the libraries cannot, but
+        # it scrapes an obfuscated payload and breaks without warning.
+        for method in (
+            self._download_ytdlp,
+            self._download_instaloader,
+            self._download_snapsave,
+        ):
             name = method.__name__.lstrip("_")
             try:
                 method(shortcode)
@@ -209,6 +217,9 @@ class InstagramHandler:
         # /p/ resolves for reels and posts alike; /reel/ 404s on image posts.
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([f"https://www.instagram.com/p/{shortcode}/"])
+
+    def _download_snapsave(self, shortcode):
+        snapsave_utils.download(shortcode)
 
     def _download_instaloader(self, shortcode):
         self.loader.filename_pattern = "{shortcode}"
