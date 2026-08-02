@@ -62,9 +62,21 @@ async def handle_links(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
 
     # Admin-only: retry Instagram login via plain text
-    if text.strip().lower() == "login" and update.message.from_user.id == admin_id:
+    command = text.strip().lower()
+    if command in ("login", "login force") and update.message.from_user.id == admin_id:
+        # A healthy session must never be thrown away by accident: forcing
+        # deletes it and a fresh login can trigger an app challenge.
+        if instagram_handler.logged_in and command != "login force":
+            await update.message.reply_text(
+                "Instagram is already logged in - not touching the session.\n"
+                "Send 'login force' to discard it and log in from scratch."
+            )
+            return
+
         await update.message.reply_text("Retrying Instagram login...")
-        instagram_handler._try_login()
+        # force=True drops a stale session file, which session reuse alone
+        # can never recover from.
+        instagram_handler._try_login(force=(command == "login force"))
         if instagram_handler.logged_in:
             await update.message.reply_text("Instagram: logged in successfully")
         else:
