@@ -3,6 +3,9 @@ import mimetypes
 import glob
 from telegram import InputMediaPhoto, InputMediaVideo
 
+# Python 3.10's mimetypes has no .webp, and Instagram serves webp images.
+mimetypes.add_type("image/webp", ".webp")
+
 # Telegram bot upload limits (without local Bot API server)
 TELEGRAM_PHOTO_LIMIT = 10 * 1024 * 1024
 TELEGRAM_VIDEO_LIMIT = 50 * 1024 * 1024
@@ -55,5 +58,6 @@ class FileHandler:
 
 
 if __name__ == "__main__":
+    assert mimetypes.guess_type("x.webp")[0] == "image/webp"
     file_handler = FileHandler()
     print(file_handler._get_file_paths("Br-7zlEBjPc"))
