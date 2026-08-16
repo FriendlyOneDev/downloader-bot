@@ -14,12 +14,19 @@ class InstagramHandler:
     SESSION_FILE = "instagrapi_session.json"
     COOKIES_FILE = os.getenv("INSTAGRAM_COOKIES", "instagram_cookies.txt")
 
+    # Logging in is opt-in: the logged-out methods cover everything, and
+    # automated logins are what earn the account scraping warnings and bans.
+    LOGIN_ENABLED = os.getenv("INSTAGRAM_LOGIN", "").lower() in ("1", "true", "yes")
+
     def __init__(self):
         self.client = Client()
         self.logged_in = False
         self.login_error = None
         self._configure_client()
-        self._try_login()
+        if self.LOGIN_ENABLED:
+            self._try_login()
+        else:
+            print("Instagram: login disabled (set INSTAGRAM_LOGIN=1 to enable)")
 
         # Instaloader fallback (no login, works for public posts)
         self.loader = instaloader.Instaloader(
@@ -108,21 +115,18 @@ class InstagramHandler:
         """Download post, trying each available method in order."""
         errors = []
 
-        if self.logged_in:
-            try:
-                self._download_instagrapi(shortcode)
-                return
-            except Exception as e:
-                errors.append(f"instagrapi: {e}")
-                print(f"instagrapi download failed ({e}), trying next method")
-
-        # snapsave last: it reaches restricted posts the libraries cannot, but
-        # it scrapes an obfuscated payload and breaks without warning.
-        for method in (
+        # Logged-out methods first - they cost the account nothing. snapsave
+        # before instagrapi because it reaches restricted posts without
+        # putting the account anywhere near Instagram's scraping detection.
+        methods = [
             self._download_ytdlp,
             self._download_instaloader,
             self._download_snapsave,
-        ):
+        ]
+        if self.logged_in:
+            methods.append(self._download_instagrapi)
+
+        for method in methods:
             name = method.__name__.lstrip("_")
             try:
                 method(shortcode)
