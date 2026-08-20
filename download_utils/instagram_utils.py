@@ -2,6 +2,7 @@ from instagrapi import Client
 import instaloader
 import os
 import requests
+import time
 import yt_dlp
 from dotenv import load_dotenv
 
@@ -111,7 +112,7 @@ class InstagramHandler:
             "Instagram 410.0.0.30.115 Android (34/14.0.0; 640dpi; 1440x3040; samsung; SM-G998B; p3s; exynos2100; en_US; 640000000)"
         )
 
-    def download_post(self, shortcode):
+    def download_post(self, shortcode, max_retries=2):
         """Download post, trying each available method in order."""
         errors = []
 
@@ -126,14 +127,22 @@ class InstagramHandler:
         if self.logged_in:
             methods.append(self._download_instagrapi)
 
-        for method in methods:
-            name = method.__name__.lstrip("_")
-            try:
-                method(shortcode)
-                return
-            except Exception as e:
-                errors.append(f"{name}: {e}")
-                print(f"{name} failed: {e}")
+        # Every method pulls from the same Instagram CDN, so one round of
+        # timeouts or 429s knocks out all of them at once. Same retry shape as
+        # tiktok_utils.fallback_download.
+        for attempt in range(max_retries):
+            if attempt:
+                time.sleep(3 * attempt)
+                print(f"Instagram retry {attempt}/{max_retries - 1} for {shortcode}")
+            errors = []
+            for method in methods:
+                name = method.__name__.lstrip("_")
+                try:
+                    method(shortcode)
+                    return
+                except Exception as e:
+                    errors.append(f"{name}: {e}")
+                    print(f"{name} failed: {e}")
 
         raise RuntimeError(self._failure_message(errors))
 
@@ -157,6 +166,16 @@ class InstagramHandler:
                 "Editing the account's birth date to match is not worth it - "
                 "it risks the account being disabled. "
                 f"Details: {detail}"
+            )
+        # Every method shares Instagram's CDN, so throttling looks like a
+        # total failure. Say so rather than blaming the post.
+        transient = ("429", "too many requests", "timed out", "timeout",
+                     "500 internal server error", "502", "503", "connection")
+        if any(w in detail.lower() for w in transient):
+            return (
+                "Instagram's CDN failed on every method (throttling, timeout "
+                "or a server error on their side). Worth retrying in a few "
+                f"minutes. Details: {detail}"
             )
         if not self.logged_in:
             return (
